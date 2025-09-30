@@ -1,0 +1,21 @@
+version: "3.9"
+
+# Production overrides for docker-compose.yml
+services:
+  backend:
+    # Use production-specific environment file
+    env_file:
+      - .env.production
+    # In production, avoid bind mounts from host by overriding volumes to empty
+    volumes: []
+
+  # Optionally, you can set production-specific environment variables for frontend
+  # (kept minimal here; consider building static web and serving via nginx)
+  frontend:
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://backend:8000}
+
+  nginx:
+    # Keep port mapping configurable via NGINX_PORT
+    ports:
+      - "${NGINX_PORT:-8080}:80"

@@ -1,3 +1,8 @@
+
+# Security & Auth
+passlib[bcrypt]
+python-jose[cryptography]
+
 fastapi
 uvicorn[standard]
 pydantic-settings

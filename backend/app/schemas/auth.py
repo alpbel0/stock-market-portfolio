@@ -19,7 +19,7 @@ class User(UserBase):
     full_name: str | None = None
 
     class Config:
-        orm_mode = True # Deprecated, use from_attributes=True in Pydantic V2
+        from_attributes = True  # Updated for Pydantic V2
 
 # --- Token Schemas ---
 

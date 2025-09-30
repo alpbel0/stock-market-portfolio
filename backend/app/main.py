@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from .core.config import get_settings
+from .core.config import get_settings, Settings
 from .core.database import get_db
 from .core.logger import setup_logging
 from .middleware.logging_middleware import logging_middleware
@@ -13,11 +13,8 @@ from .middleware.error_handler import generic_error_handler
 # Setup logging
 setup_logging()
 
-# Get settings instance
-settings = get_settings()
-
 # Initialize the FastAPI app
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title="Stock Market Portfolio API")
 
 # --- Middleware Configuration ---
 
@@ -31,7 +28,7 @@ app.add_middleware(BaseHTTPMiddleware, dispatch=generic_error_handler)
 # 3. CORS Middleware (runs last on request, first on response)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=get_settings().ALLOWED_ORIGINS,  # Read directly for middleware
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,18 +37,18 @@ app.add_middleware(
 # --- API Endpoints ---
 
 @app.get("/info", tags=["Information"])
-def get_info(app_settings: Settings = Depends(get_settings)):
+def get_info(settings: Settings = Depends(get_settings)):
     """
     Returns basic information about the API, such as project name and version.
     """
     return {
-        "project_name": app_settings.PROJECT_NAME,
-        "api_version": app_settings.API_VERSION,
+        "project_name": settings.PROJECT_NAME,
+        "api_version": settings.API_VERSION,
     }
 
 
 @app.get("/")
-def read_root():
+def read_root(settings: Settings = Depends(get_settings)):
     """A simple root endpoint to confirm the API is running."""
     return {"status": "ok", "message": f"Welcome to {settings.PROJECT_NAME}"}
 

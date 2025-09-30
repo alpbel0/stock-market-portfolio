@@ -13,9 +13,6 @@ COPY . .
 
 # The command to run the app is specified in docker-compose.yml
 
-# syntax=docker/dockerfile:1
-
-FROM python:3.11-slim
 
 WORKDIR /app
 

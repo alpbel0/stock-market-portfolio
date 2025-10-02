@@ -5,10 +5,11 @@ from sqlalchemy.orm import Session
 
 from ...core.config import get_settings
 from ...core.database import get_db
-from ...core.security import create_access_token, verify_token
+from ...core.security import create_access_token
 from ...crud.user import authenticate_user, create_user, get_user_by_email
 from ...schemas.auth import Token, UserCreate, User
 from ...models.user import User as UserModel
+from ..deps import get_current_active_user
 
 router = APIRouter()
 settings = get_settings()
@@ -86,8 +87,8 @@ def login(
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(
-    db: Session = Depends(get_db)
+def refresh_token(
+    current_user: UserModel = Depends(get_current_active_user)
 ):
     """
     Refresh the access token.
@@ -102,11 +103,8 @@ async def refresh_token(
     
     Returns a new access token.
     """
-    # Import here to avoid circular dependency
-    from ..deps import get_current_active_user
-    
-    # Get current user from token
-    current_user = await get_current_active_user()
+    # FastAPI will automatically inject current_user through the Depends mechanism
+    # No need to manually call get_current_active_user()
     
     # Create new access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -119,8 +117,8 @@ async def refresh_token(
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout(
-    db: Session = Depends(get_db)
+def logout(
+    current_user: UserModel = Depends(get_current_active_user)
 ):
     """
     Logout the current user.
@@ -132,11 +130,8 @@ async def logout(
     
     Returns a success message.
     """
-    # Import here to avoid circular dependency
-    from ..deps import get_current_active_user
-    
-    # Verify user is authenticated
-    current_user = await get_current_active_user()
+    # FastAPI will automatically inject current_user through the Depends mechanism
+    # No need to manually call get_current_active_user()
     
     # In a stateless JWT setup, logout is primarily client-side
     # The client should delete/clear the access token

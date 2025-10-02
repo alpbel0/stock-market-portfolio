@@ -9,6 +9,7 @@ from .core.database import get_db
 from .core.logger import setup_logging
 from .middleware.logging_middleware import logging_middleware
 from .middleware.error_handler import generic_error_handler
+from .api.v1 import auth
 
 # Setup logging
 setup_logging()
@@ -33,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- API Routers ---
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 
 # --- API Endpoints ---
 

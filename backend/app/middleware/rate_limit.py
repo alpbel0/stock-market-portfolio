@@ -20,8 +20,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     
     def __init__(self, app):
         super().__init__(app)
-        # Store: {ip: [(timestamp, endpoint), ...]}
-        self.requests: Dict[str, list] = defaultdict(list)
+        # Store request timestamps per (client_ip, bucket) pair
+        # Buckets isolate login attempts from general traffic so their
+        # respective rate limit windows do not interfere with each other.
+        self.requests: Dict[Tuple[str, str], list] = defaultdict(list)
         
         # Rate limit configurations
         self.login_rate_limit = 5  # 5 attempts
@@ -30,32 +32,26 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.general_rate_limit = 100  # 100 requests
         self.general_window = 60  # 1 minute in seconds
     
-    def _clean_old_requests(self, ip: str, window: int):
-        """Remove requests older than the specified window."""
+    def _clean_old_requests(self, key: Tuple[str, str], window: int):
+        """Remove request timestamps outside of the given time window for a bucket."""
         current_time = time.time()
-        self.requests[ip] = [
-            (ts, endpoint) for ts, endpoint in self.requests[ip]
+        self.requests[key] = [
+            ts for ts in self.requests[key]
             if current_time - ts < window
         ]
-    
-    def _is_rate_limited(self, ip: str, endpoint: str, limit: int, window: int) -> Tuple[bool, int]:
+
+    def _is_rate_limited(self, key: Tuple[str, str], limit: int, window: int) -> Tuple[bool, int]:
         """
-        Check if the IP is rate limited for a specific endpoint.
+        Check if the bucket is rate limited for a specific endpoint.
         Returns (is_limited, remaining_requests)
         """
-        self._clean_old_requests(ip, window)
-        
-        # Count requests for this endpoint
-        endpoint_requests = [
-            ts for ts, ep in self.requests[ip]
-            if ep == endpoint
-        ]
-        
-        requests_count = len(endpoint_requests)
+        self._clean_old_requests(key, window)
+
+        requests_count = len(self.requests[key])
         remaining = max(0, limit - requests_count)
-        
+
         return requests_count >= limit, remaining
-    
+
     async def dispatch(self, request: Request, call_next):
         """Process each request and apply rate limiting."""
         
@@ -73,11 +69,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         is_login = path == "/api/v1/auth/login" and request.method == "POST"
         
         if is_login:
+            bucket = (client_ip, "login")
             # Apply stricter rate limit for login attempts
             is_limited, remaining = self._is_rate_limited(
-                client_ip, path, self.login_rate_limit, self.login_window
+                bucket, self.login_rate_limit, self.login_window
             )
-            
+
             if is_limited:
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -91,11 +88,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     }
                 )
         else:
+            bucket = (client_ip, "general")
             # Apply general rate limit
             is_limited, remaining = self._is_rate_limited(
-                client_ip, "general", self.general_rate_limit, self.general_window
+                bucket, self.general_rate_limit, self.general_window
             )
-            
+
             if is_limited:
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -110,25 +108,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 )
         
         # Record this request
-        self.requests[client_ip].append((current_time, path if is_login else "general"))
-        
+        self.requests[bucket].append(current_time)
+
         # Continue processing the request
         response = await call_next(request)
-        
+
         # Add rate limit headers
         if is_login:
             _, remaining = self._is_rate_limited(
-                client_ip, path, self.login_rate_limit, self.login_window
+                bucket, self.login_rate_limit, self.login_window
             )
             response.headers["X-RateLimit-Limit"] = str(self.login_rate_limit)
             response.headers["X-RateLimit-Remaining"] = str(remaining)
             response.headers["X-RateLimit-Window"] = f"{self.login_window}s"
         else:
             _, remaining = self._is_rate_limited(
-                client_ip, "general", self.general_rate_limit, self.general_window
+                bucket, self.general_rate_limit, self.general_window
             )
             response.headers["X-RateLimit-Limit"] = str(self.general_rate_limit)
             response.headers["X-RateLimit-Remaining"] = str(remaining)
             response.headers["X-RateLimit-Window"] = f"{self.general_window}s"
-        
+
         return response

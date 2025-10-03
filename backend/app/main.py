@@ -9,7 +9,9 @@ from .core.database import get_db
 from .core.logger import setup_logging
 from .middleware.logging_middleware import logging_middleware
 from .middleware.error_handler import generic_error_handler
-from .api.v1 import auth
+from .middleware.rate_limit import RateLimitMiddleware
+from .api.v1 import auth, users
+
 
 # Setup logging
 setup_logging()
@@ -23,10 +25,13 @@ app = FastAPI(title="Stock Market Portfolio API")
 # 1. Logging Middleware (runs first on request, last on response)
 app.add_middleware(BaseHTTPMiddleware, dispatch=logging_middleware)
 
-# 2. Error Handling Middleware
+# 2. Rate Limiting Middleware (protects against abuse)
+app.add_middleware(RateLimitMiddleware)
+
+# 3. Error Handling Middleware
 app.add_middleware(BaseHTTPMiddleware, dispatch=generic_error_handler)
 
-# 3. CORS Middleware (runs last on request, first on response)
+# 4. CORS Middleware (runs last on request, first on response)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().ALLOWED_ORIGINS,  # Read directly for middleware
@@ -37,6 +42,7 @@ app.add_middleware(
 
 # --- API Routers ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["User Management"])
 
 # --- API Endpoints ---
 

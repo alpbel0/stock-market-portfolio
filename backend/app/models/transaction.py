@@ -1,8 +1,11 @@
 """
 Defines the Transaction model for recording buy/sell transactions.
 """
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Enum
+from __future__ import annotations
+
 import enum
+
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Enum
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
@@ -28,7 +31,6 @@ class Transaction(Base):
     )
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
-    total_amount = Column(Float, nullable=False)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -37,6 +39,11 @@ class Transaction(Base):
     # Relationships
     portfolio = relationship("Portfolio", back_populates="transactions")
     asset = relationship("Asset", back_populates="transactions")
+
+    @property
+    def total_amount(self) -> float:
+        """Return the transactional notional (quantity * price)."""
+        return self.quantity * self.price
 
     def __repr__(self):
         return f"<Transaction(id={self.id}, type='{self.transaction_type}', asset_id={self.asset_id})>"

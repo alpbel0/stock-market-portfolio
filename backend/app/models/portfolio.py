@@ -1,10 +1,11 @@
-"""
-Defines the Portfolio model for storing user portfolio information.
-"""
+"""Portfolio model with derived financial metrics."""
+from __future__ import annotations
+
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+
 
 class Portfolio(Base):
     """
@@ -36,14 +37,20 @@ class Portfolio(Base):
         """Aggregate current market value of all assets in this portfolio."""
         value = 0.0
         for asset in self.assets:
-            if asset.current_price is not None:
-                value += asset.current_price * asset.quantity
+            price = asset.current_price if asset.current_price is not None else 0.0
+            value += price * asset.total_quantity
         return value
 
     @property
     def total_cost(self) -> float:
-        """Aggregate acquisition cost based on purchase price of assets."""
-        return sum(asset.purchase_price * asset.quantity for asset in self.assets)
+        """Aggregate acquisition cost derived from buy transactions."""
+        from .transaction import TransactionType
+
+        return sum(
+            tx.quantity * tx.price
+            for tx in self.transactions
+            if tx.transaction_type == TransactionType.BUY
+        )
 
     @property
     def profit_loss(self) -> float:

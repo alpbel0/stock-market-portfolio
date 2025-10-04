@@ -2,9 +2,17 @@
 Defines the Asset model for storing assets within a portfolio.
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Enum, UniqueConstraint
+import enum
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+
+class AssetType(str, enum.Enum):
+    STOCK = "stock"
+    CRYPTO = "crypto"
+    ETF = "etf"
+    OTHER = "other"
+
 
 class Asset(Base):
     """
@@ -20,7 +28,10 @@ class Asset(Base):
     
     symbol = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False)
-    asset_type = Column(Enum("stock", "crypto", "etf", "other", name="asset_types"), nullable=False)
+    asset_type = Column(
+        Enum(AssetType, name="asset_types", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+    )
     
     quantity = Column(Float, nullable=False)
     purchase_price = Column(Float, nullable=False)

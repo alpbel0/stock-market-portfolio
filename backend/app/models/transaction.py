@@ -2,9 +2,15 @@
 Defines the Transaction model for recording buy/sell transactions.
 """
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Enum
+import enum
 from sqlalchemy.orm import relationship
 
 from ..core.database import Base
+
+class TransactionType(str, enum.Enum):
+    BUY = "buy"
+    SELL = "sell"
+
 
 class Transaction(Base):
     """
@@ -16,7 +22,10 @@ class Transaction(Base):
     portfolio_id = Column(Integer, ForeignKey("portfolios.id"), nullable=False)
     asset_id = Column(Integer, ForeignKey("assets.id"), nullable=False)
     
-    transaction_type = Column(Enum("buy", "sell", name="transaction_types"), nullable=False)
+    transaction_type = Column(
+        Enum(TransactionType, name="transaction_types", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+    )
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
     total_amount = Column(Float, nullable=False)

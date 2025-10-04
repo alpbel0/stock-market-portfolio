@@ -3,10 +3,23 @@
 passlib[bcrypt]
 python-jose[cryptography]
 
+# Web Framework
 fastapi
 uvicorn[standard]
 pydantic-settings
+
+# Database
 SQLAlchemy
 psycopg2-binary
-
 alembic
+
+# Rate Limiting & Caching
+redis
+
+# Input Validation
+email-validator
+
+# Development & Testing
+pytest
+pytest-asyncio
+httpx

@@ -32,6 +32,7 @@ class Asset(Base):
 
     # Relationships
     portfolio = relationship("Portfolio", back_populates="assets")
+    transactions = relationship("Transaction", back_populates="asset", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Asset(id={self.id}, symbol='{self.symbol}', portfolio_id={self.portfolio_id})>"

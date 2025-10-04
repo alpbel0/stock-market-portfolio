@@ -27,7 +27,7 @@ class Transaction(Base):
 
     # Relationships
     portfolio = relationship("Portfolio", back_populates="transactions")
-    asset = relationship("Asset")
+    asset = relationship("Asset", back_populates="transactions")
 
     def __repr__(self):
         return f"<Transaction(id={self.id}, type='{self.transaction_type}', asset_id={self.asset_id})>"

@@ -1,5 +1,4 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ..core.database import get_db
@@ -7,13 +6,8 @@ from ..core.security import verify_token
 from ..crud.user import get_user_by_email
 from ..models.user import User
 
-# OAuth2 scheme for token authentication
-# tokenUrl points to the login endpoint where clients can obtain tokens
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
-
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    authorization: str | None = Header(default=None),
     db: Session = Depends(get_db)
 ) -> User:
     """
@@ -41,6 +35,15 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = authorization.split(" ", 1)[1].strip()
+
     # Verify token and get user email
     email = verify_token(token, credentials_exception)
     

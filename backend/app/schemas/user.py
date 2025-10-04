@@ -1,10 +1,10 @@
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, validator
 from typing import Optional
 from datetime import datetime
 import re
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     full_name: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -27,7 +27,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int

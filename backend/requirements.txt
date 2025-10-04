@@ -1,5 +1,6 @@
 
 # Security & Auth
+python-multipart
 passlib[bcrypt]
 python-jose[cryptography]
 

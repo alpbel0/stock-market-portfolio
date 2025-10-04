@@ -7,9 +7,9 @@ from ...models.user import User
 from ...schemas.user import UserResponse, UserUpdate, UserProfile
 from ...crud.user import get_user_by_id, update_user, delete_user
 from ...utils.rate_limit import check_api_rate_limit
-from ...utils.validation import validate_json_payload
+from ...utils.validation import validate_json_payload, validate_email_format, validate_name
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 @router.get("/me", response_model=UserProfile, summary="Get current user profile")
 def get_current_user_profile(
@@ -52,6 +52,10 @@ def update_current_user_profile(
     
     # Validate input data
     update_data = validate_json_payload(user_update.model_dump(exclude_unset=True))
+    if "email" in update_data:
+        update_data["email"] = validate_email_format(update_data["email"])
+    if "full_name" in update_data and update_data["full_name"] is not None:
+        update_data["full_name"] = validate_name(update_data["full_name"], "Full name")
     
     # Create new UserUpdate object with validated data
     validated_update = UserUpdate(**update_data)

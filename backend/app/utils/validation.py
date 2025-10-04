@@ -55,7 +55,7 @@ def sanitize_string(input_string: str, max_length: int = 255) -> str:
     sanitized = html.escape(input_string)
     
     # Remove any remaining potentially dangerous characters
-    sanitized = re.sub(r'[<>"\\'`]', '', sanitized)
+    sanitized = re.sub(r"[<>\"'`]", '', sanitized)
     
     return sanitized.strip()
 

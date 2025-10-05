@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class CacheService:
     """
-    Redis tabанlı cache servisi.
+    Redis tabanlı cache servisi.
     
     Piyasa verilerini Redis'te cache'leyerek API çağrılarını optimize eder.
     TTL (Time To Live) mekanizması ile cache'in otomatik yenilenmesini sağlar.
@@ -327,13 +327,29 @@ class CacheService:
             db: SQLAlchemy session
         """
         try:
+            # timestamp işleme: varsa güvenle parse et, yoksa doğrudan utcnow kullan
+            ts_val = data.get('timestamp')
+            parsed_ts = None
+            if isinstance(ts_val, datetime):
+                parsed_ts = ts_val
+            elif isinstance(ts_val, str) and ts_val:
+                try:
+                    # 'Z' son ekini desteklemek için +00:00'a dönüştür
+                    iso_str = ts_val.replace('Z', '+00:00')
+                    parsed_ts = datetime.fromisoformat(iso_str)
+                except Exception:
+                    # Bozuk timestamp gelirse güvenli varsayılanı kullan
+                    parsed_ts = datetime.utcnow()
+            else:
+                parsed_ts = datetime.utcnow()
+
             market_data = MarketData(
                 symbol=symbol.upper(),
                 price=data.get('price'),
                 change=data.get('change'),
                 change_percent=data.get('change_percent'),
                 volume=data.get('volume'),
-                timestamp=datetime.fromisoformat(data.get('timestamp', datetime.utcnow().isoformat())),
+                timestamp=parsed_ts,
                 source=source
             )
             

@@ -99,13 +99,30 @@ def get_or_create_asset(
 def add_transaction(db: Session, portfolio_id: int, transaction_in: TransactionCreate) -> Transaction:
     """Add a new transaction, creating the asset if it doesn't exist."""
 
-    asset = get_or_create_asset(
-        db,
-        portfolio_id=portfolio_id,
-        symbol=transaction_in.symbol,
-        name=transaction_in.asset_name,
-        asset_type=transaction_in.asset_type,
-    )
+    asset = db.query(Asset).filter(
+        and_(Asset.portfolio_id == portfolio_id, Asset.symbol == transaction_in.symbol)
+    ).first()
+
+    if asset:
+        name = transaction_in.asset_name or asset.name
+        asset_type = transaction_in.asset_type or asset.asset_type
+        asset = get_or_create_asset(
+            db,
+            portfolio_id=portfolio_id,
+            symbol=transaction_in.symbol,
+            name=name,
+            asset_type=asset_type,
+        )
+    else:
+        if transaction_in.asset_name is None or transaction_in.asset_type is None:
+            raise ValueError("Asset metadata (asset_name, asset_type) is required for new symbols.")
+        asset = get_or_create_asset(
+            db,
+            portfolio_id=portfolio_id,
+            symbol=transaction_in.symbol,
+            name=transaction_in.asset_name,
+            asset_type=transaction_in.asset_type,
+        )
 
     transaction = Transaction(
         portfolio_id=portfolio_id,

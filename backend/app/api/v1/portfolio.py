@@ -141,7 +141,11 @@ def add_new_transaction(
     portfolio = crud_portfolio.get_portfolio_summary(db, portfolio_id=portfolio_id)
     if not portfolio or portfolio.owner.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
-    return crud_portfolio.add_transaction(db, portfolio_id=portfolio_id, transaction_in=transaction_in)
+
+    try:
+        return crud_portfolio.add_transaction(db, portfolio_id=portfolio_id, transaction_in=transaction_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 @router.get("/{portfolio_id}/transactions", response_model=List[Transaction])
 def get_portfolio_transactions(

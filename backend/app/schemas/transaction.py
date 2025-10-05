@@ -2,6 +2,7 @@
 Pydantic modeller for Transaction verileri.
 """
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -22,8 +23,8 @@ class TransactionCreate(TransactionBase):
     """Yeni işlem oluştururken kullanılan alanlar."""
 
     symbol: str
-    asset_name: str
-    asset_type: AssetType
+    asset_name: Optional[str] = None
+    asset_type: Optional[AssetType] = None
 
 
 class Transaction(TransactionBase):

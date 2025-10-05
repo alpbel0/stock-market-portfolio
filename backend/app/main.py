@@ -43,7 +43,7 @@ app.add_middleware(
 # --- API Routers ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["User Management"])
-app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio Management"])
+app.include_router(portfolio.router, prefix="/api/v1")
 
 # --- API Endpoints ---
 

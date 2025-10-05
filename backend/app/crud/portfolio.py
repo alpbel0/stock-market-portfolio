@@ -1,5 +1,5 @@
 """
-CRUD operations for Portfolio, Asset, and Transaction models.
+CRUD operations for Portfolio and Asset models.
 """
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -7,7 +7,6 @@ from typing import List, Optional
 
 from ..models.portfolio import Portfolio
 from ..models.asset import Asset
-from ..models.transaction import Transaction
 from ..schemas.portfolio import PortfolioCreate, PortfolioUpdate
 from ..schemas.asset import AssetCreate, AssetUpdate
 

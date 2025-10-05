@@ -9,6 +9,7 @@ from ...core.deps import get_db, get_current_active_user
 from ...models.user import User
 from ...schemas.portfolio import Portfolio, PortfolioCreate, PortfolioUpdate, PortfolioValue
 from ...schemas.asset import Asset, AssetCreate, AssetUpdate
+from ...models.asset import Asset as AssetModel
 from ...crud import portfolio as crud_portfolio
 
 router = APIRouter(prefix="/portfolios", tags=["portfolios"])
@@ -108,27 +109,45 @@ def get_portfolio_assets(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
     return crud_portfolio.get_assets_by_portfolio(db, portfolio_id=portfolio_id)
 
-@router.put("/assets/{asset_id}", response_model=Asset)
+@router.put("/{portfolio_id}/assets/{asset_id}", response_model=Asset)
 def update_asset_details(
+    portfolio_id: int,
     asset_id: int,
     asset_in: AssetUpdate,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)]
 ) -> Asset:
     """Update an asset's details."""
-    asset = db.query(Asset).filter(Asset.id == asset_id).first()
-    if not asset or asset.portfolio.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    asset = (
+        db.query(AssetModel)
+        .filter(AssetModel.id == asset_id, AssetModel.portfolio_id == portfolio_id)
+        .first()
+    )
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found in portfolio")
     return crud_portfolio.update_asset(db, asset_id, asset_in)
 
-@router.delete("/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{portfolio_id}/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_asset_from_portfolio(
+    portfolio_id: int,
     asset_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     """Remove an asset from a portfolio."""
-    asset = db.query(Asset).filter(Asset.id == asset_id).first()
-    if not asset or asset.portfolio.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    asset = (
+        db.query(AssetModel)
+        .filter(AssetModel.id == asset_id, AssetModel.portfolio_id == portfolio_id)
+        .first()
+    )
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found in portfolio")
     crud_portfolio.remove_asset(db, asset_id)

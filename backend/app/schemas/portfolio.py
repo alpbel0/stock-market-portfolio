@@ -1,7 +1,7 @@
 """
 Pydantic models for Portfolio data.
 """
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -22,7 +22,7 @@ class Portfolio(PortfolioBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-    assets: List[Asset] = []
+    assets: List[Asset] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

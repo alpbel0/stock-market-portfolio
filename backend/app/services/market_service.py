@@ -32,12 +32,16 @@ class MarketDataService:
         """Market Data Service'i başlat ve API client'larını yapılandır."""
         settings = get_settings()
         
-        # Alpha Vantage API Key
-        self.alpha_vantage_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', 'QG2Q9F9BBPP0GXJX')
+        # Alpha Vantage API key yapılandırmadan alınmalı
+        self.alpha_vantage_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
+        if not self.alpha_vantage_key:
+            raise ValueError("ALPHA_VANTAGE_API_KEY ayarlanmalı ve boş bırakılamaz.")
         self.ts = TimeSeries(key=self.alpha_vantage_key, output_format='json')
         
-        # CoinGecko API Key
-        self.coingecko_key = getattr(settings, 'COINGECKO_API_KEY', 'CG-NrpC2PP6vK5jAsG5wWfw1yj2')
+        # CoinGecko API key yapılandırmadan alınmalı
+        self.coingecko_key = getattr(settings, 'COINGECKO_API_KEY', None)
+        if not self.coingecko_key:
+            raise ValueError("COINGECKO_API_KEY ayarlanmalı ve boş bırakılamaz.")
         self.cg = CoinGeckoAPI(api_key=self.coingecko_key)
         
         # TCMB XML URL

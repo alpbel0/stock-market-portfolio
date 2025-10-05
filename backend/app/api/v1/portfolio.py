@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from ...core.deps import get_db, get_current_active_user
 from ...models.user import User
 from ...schemas.portfolio import Portfolio, PortfolioCreate, PortfolioUpdate, PortfolioSummary
-from ...schemas.asset import Asset
+from ...schemas.asset import Asset, AssetCreate, AssetUpdate
 from ...schemas.transaction import Transaction, TransactionCreate
 from ...crud import portfolio as crud_portfolio
 
@@ -32,6 +32,18 @@ def get_user_portfolios(
 ) -> List[Portfolio]:
     """Get all portfolios for the current user."""
     return crud_portfolio.get_portfolios_by_user(db, user_id=current_user.id)
+
+@router.get("/{portfolio_id}", response_model=Portfolio)
+def get_portfolio_by_id(
+    portfolio_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> Portfolio:
+    """Get a specific portfolio by ID."""
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id=portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+    return portfolio
 
 @router.get("/{portfolio_id}/summary", response_model=PortfolioSummary)
 def get_portfolio_summary(
@@ -69,6 +81,52 @@ def delete_portfolio_by_id(
     if not portfolio or portfolio.owner.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
     crud_portfolio.delete_portfolio(db, portfolio_id=portfolio_id)
+
+# --- Asset Management Endpoints --- #
+
+@router.post("/{portfolio_id}/assets", response_model=Asset, status_code=status.HTTP_201_CREATED)
+def add_asset_to_portfolio(
+    portfolio_id: int,
+    asset_in: AssetCreate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> Asset:
+    """Add a new asset to a portfolio."""
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id=portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+    return crud_portfolio.create_asset(db, portfolio_id=portfolio_id, asset_in=asset_in)
+
+@router.get("/{portfolio_id}/assets", response_model=List[Asset])
+def get_portfolio_assets(
+    portfolio_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> List[Asset]:
+    """Get all assets in a specific portfolio."""
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id=portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+    return crud_portfolio.get_assets_by_portfolio(db, portfolio_id=portfolio_id)
+
+@router.put("/{portfolio_id}/assets/{asset_id}", response_model=Asset)
+def update_portfolio_asset(
+    portfolio_id: int,
+    asset_id: int,
+    asset_in: AssetUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> Asset:
+    """Update an asset in a portfolio."""
+    portfolio = crud_portfolio.get_portfolio_by_id(db, portfolio_id=portfolio_id)
+    if not portfolio or portfolio.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+    
+    asset_data = asset_in.model_dump(exclude_unset=True)
+    updated_asset = crud_portfolio.update_asset(db, portfolio_id=portfolio_id, asset_id=asset_id, asset_data=asset_data)
+    if not updated_asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found in portfolio")
+    return updated_asset
 
 # --- Transaction Endpoints --- #
 

@@ -14,6 +14,11 @@ class AssetBase(BaseModel):
 class AssetCreate(AssetBase):
     pass
 
+class AssetUpdate(BaseModel):
+    symbol: Optional[str] = None
+    name: Optional[str] = None
+    asset_type: Optional[AssetType] = None
+
 class Asset(AssetBase):
     id: int
     portfolio_id: int

@@ -26,6 +26,10 @@ def get_portfolios_by_user(db: Session, user_id: int) -> List[Portfolio]:
     """Get all portfolios for a specific user."""
     return db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
 
+def get_portfolio_by_id(db: Session, portfolio_id: int) -> Optional[Portfolio]:
+    """Get a single portfolio by ID."""
+    return db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+
 def get_portfolio_summary(db: Session, portfolio_id: int) -> Optional[Portfolio]:
     """Get a portfolio and eager load its assets and their transactions."""
     return (
@@ -95,6 +99,35 @@ def get_transactions_by_portfolio(db: Session, portfolio_id: int) -> List[Transa
     """Get all transactions for a specific portfolio."""
     return db.query(Transaction).filter(Transaction.portfolio_id == portfolio_id).order_by(Transaction.created_at.desc()).all()
 
+
+def get_assets_by_portfolio(db: Session, portfolio_id: int) -> List[Asset]:
+    """Get all assets for a specific portfolio."""
+    return db.query(Asset).filter(Asset.portfolio_id == portfolio_id).all()
+
+def create_asset(db: Session, portfolio_id: int, asset_in: AssetCreate) -> Asset:
+    """Create a new asset for a portfolio."""
+    asset = Asset(**asset_in.model_dump(), portfolio_id=portfolio_id)
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
+    return asset
+
+def update_asset(db: Session, portfolio_id: int, asset_id: int, asset_data: dict) -> Optional[Asset]:
+    """Update an existing asset."""
+    asset = (
+        db.query(Asset)
+        .filter(Asset.id == asset_id, Asset.portfolio_id == portfolio_id)
+        .first()
+    )
+    if not asset:
+        return None
+    
+    for key, value in asset_data.items():
+        setattr(asset, key, value)
+    
+    db.commit()
+    db.refresh(asset)
+    return asset
 
 def remove_asset(db: Session, portfolio_id: int, asset_id: int) -> bool:
     """Remove an asset and its transactions from a portfolio."""

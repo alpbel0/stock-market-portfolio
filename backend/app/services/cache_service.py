@@ -40,7 +40,9 @@ class CacheService:
         
         # Redis bağlantısını kur
         if redis_url is None:
-            redis_url = getattr(settings, 'REDIS_URL', 'redis://localhost:6379/0')
+            redis_host = getattr(settings, 'REDIS_HOST', 'localhost')
+            redis_port = getattr(settings, 'REDIS_PORT', 6379)
+            redis_url = f"redis://{redis_host}:{redis_port}/0"
         
         try:
             self.redis_client = redis.from_url(

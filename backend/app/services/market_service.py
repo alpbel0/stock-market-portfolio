@@ -10,7 +10,6 @@ import time
 import requests
 import yfinance as yf
 from alpha_vantage.timeseries import TimeSeries
-from alpha_vantage.symbol_search import SymbolSearch
 from pycoingecko import CoinGeckoAPI
 
 from ..core.config import get_settings
@@ -44,14 +43,17 @@ class MarketDataService:
         if not self.alpha_vantage_key:
             raise ValueError("ALPHA_VANTAGE_API_KEY ayarlanmalı ve boş bırakılamaz.")
         self.ts = TimeSeries(key=self.alpha_vantage_key, output_format='json')
-        self.ss = SymbolSearch(key=self.alpha_vantage_key, output_format='json')
 
         
         # CoinGecko API key yapılandırmadan alınmalı
         self.coingecko_key = getattr(settings, 'COINGECKO_API_KEY', None)
-        if not self.coingecko_key:
-            raise ValueError("COINGECKO_API_KEY ayarlanmalı ve boş bırakılamaz.")
-        self.cg = CoinGeckoAPI(api_key=self.coingecko_key)
+        try:
+            if not self.coingecko_key:
+                raise ValueError("COINGECKO_API_KEY ayarlanmalı ve boş bırakılamaz.")
+            self.cg = CoinGeckoAPI(api_key=self.coingecko_key)
+        except ValueError as e:
+            logger.warning(f"CoinGecko API başlatılamadı: {e}")
+            self.cg = None
         
         # TCMB XML URL
         self.tcmb_url = 'https://www.tcmb.gov.tr/kurlar/today.xml'
@@ -69,7 +71,7 @@ class MarketDataService:
             Aramayla eşleşen sembollerin listesi.
         """
         try:
-            data, _ = self.ss.get_symbol_search(keywords=query)
+            data, _ = self.ts.get_symbol_search(keywords=query)
             return data
         except Exception as e:
             logger.error(f"Alpha Vantage symbol search error for query '{query}': {str(e)}")

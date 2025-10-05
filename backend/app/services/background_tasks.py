@@ -102,11 +102,12 @@ class BackgroundTaskService:
             prices = self.market_service.get_bulk_stock_prices(popular_symbols)
             
             # Cache'e kaydet
+            pipe = self.cache_service.redis_client.pipeline()
             for symbol, price_data in prices.items():
                 if price_data:
-                    # CacheService API'sine uygun şekilde cache'le
-                    source = price_data.get('provider', 'yahoo_finance')
-                    self.cache_service.cache_market_data(symbol, price_data, source=source, ttl=300)
+                    cache_key = self.cache_service._generate_cache_key(symbol, price_data.get("provider"))
+                    pipe.setex(cache_key, 300, json.dumps(price_data))
+            pipe.execute()
             
             logger.info(f"Successfully fetched and cached prices for {len(prices)} stocks")
             

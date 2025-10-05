@@ -1,0 +1,128 @@
+2025-10-06 00:03:57,898 - [INFO] - app.services.market_service - MarketDataService initialized successfully
+2025-10-06 00:03:57,899 - [INFO] - app.services.cache_service - Redis connection established: redis://localhost:6379/0
+2025-10-06 00:03:57,899 - [INFO] - app.services.cache_service - CacheService initialized with TTL: 300s
+2025-10-06 00:03:57,899 - [INFO] - app.services.background_tasks - BackgroundTaskService initialized
+2025-10-06 00:03:57,899 - [INFO] - apscheduler.scheduler - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 00:03:57,899 - [INFO] - apscheduler.scheduler - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Added job "Fetch popular stock prices" to job store "default"
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Added job "Recalculate portfolio values" to job store "default"
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Added job "Refresh cache" to job store "default"
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Added job "Update trending stocks" to job store "default"
+2025-10-06 00:03:57,900 - [INFO] - apscheduler.scheduler - Scheduler started
+2025-10-06 00:03:57,900 - [INFO] - app.services.background_tasks - Background tasks scheduler started successfully
+2025-10-06 00:03:57,900 - [INFO] - app.services.background_tasks - Background tasks started
+2025-10-06 00:03:58,651 - [INFO] - app.middleware.logging_middleware - Request:  GET /health
+2025-10-06 00:03:58,679 - [INFO] - app.middleware.logging_middleware - Response: 200 (took 28.15ms)
+2025-10-06 00:08:57,903 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:13:57 +03)" (scheduled at 2025-10-06 00:08:57.899716+03:00)
+2025-10-06 00:08:57,904 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:09:09,913 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,914 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,915 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,916 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,916 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,917 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,918 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,919 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,919 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,920 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:09:09,920 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:09:09,921 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:13:57 +03)" executed successfully
+2025-10-06 00:12:08,205 - [INFO] - app.middleware.logging_middleware - Request:  GET /api/v1/market/price/AAPL
+2025-10-06 00:12:09,816 - [INFO] - app.middleware.logging_middleware - Response: 200 (took 1611.25ms)
+2025-10-06 00:12:12,985 - [INFO] - app.middleware.logging_middleware - Request:  GET /api/v1/market/search/Tesla
+2025-10-06 00:12:13,693 - [ERROR] - app.services.market_service - Alpha Vantage symbol search error for query 'Tesla': The **demo** API key is for demo purposes only. Please claim your free API key at (https://www.alphavantage.co/support/#api-key) to explore our full API offerings. It takes fewer than 20 seconds.
+2025-10-06 00:12:13,694 - [INFO] - app.middleware.logging_middleware - Response: 500 (took 709.58ms)
+2025-10-06 00:12:14,837 - [INFO] - app.middleware.logging_middleware - Request:  GET /api/v1/market/trending
+2025-10-06 00:12:17,897 - [INFO] - app.middleware.logging_middleware - Response: 200 (took 3060.45ms)
+2025-10-06 00:12:20,992 - [INFO] - app.middleware.logging_middleware - Request:  POST /api/v1/market/bulk-prices
+2025-10-06 00:12:23,322 - [INFO] - app.middleware.logging_middleware - Response: 200 (took 2329.87ms)
+2025-10-06 00:13:57,900 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:18:57 +03)" (scheduled at 2025-10-06 00:13:57.899716+03:00)
+2025-10-06 00:13:57,901 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:14:05,125 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,126 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,127 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,127 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,128 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,129 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,130 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,130 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,131 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,132 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:14:05,132 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:14:05,132 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:18:57 +03)" executed successfully
+2025-10-06 00:18:57,902 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:23:57 +03)" (scheduled at 2025-10-06 00:18:57.899716+03:00)
+2025-10-06 00:18:57,902 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:19:05,230 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,231 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,232 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,233 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,234 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,235 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,235 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,236 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,237 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,238 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:19:05,238 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:19:05,238 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:23:57 +03)" executed successfully
+2025-10-06 00:19:05,239 - [WARNING] - apscheduler.executors.default - Run time of job "Recalculate portfolio values (trigger: interval[0:15:00], next run at: 2025-10-06 00:33:57 +03)" was missed by 0:00:07.339228
+2025-10-06 00:21:16,134 - [INFO] - app.middleware.logging_middleware - Request:  GET /api/v1/market/price/AAPL
+2025-10-06 00:21:17,645 - [INFO] - app.middleware.logging_middleware - Response: 200 (took 1511.26ms)
+2025-10-06 00:23:57,905 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:28:57 +03)" (scheduled at 2025-10-06 00:23:57.899716+03:00)
+2025-10-06 00:23:57,925 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:24:04,980 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,980 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,981 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,982 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,983 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,984 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,984 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,985 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,986 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,987 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:24:04,987 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:24:04,987 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:28:57 +03)" executed successfully
+2025-10-06 00:28:57,902 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:33:57 +03)" (scheduled at 2025-10-06 00:28:57.899716+03:00)
+2025-10-06 00:28:57,907 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:29:03,843 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,844 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,846 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,846 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,847 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,848 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,849 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,850 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,851 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,852 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:29:03,852 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:29:03,852 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:33:57 +03)" executed successfully
+2025-10-06 00:33:57,906 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:38:57 +03)" (scheduled at 2025-10-06 00:33:57.899716+03:00)
+2025-10-06 00:33:57,906 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:34:05,794 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,794 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,795 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,795 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,795 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,796 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,796 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,797 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,797 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,797 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:34:05,797 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:34:05,797 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:38:57 +03)" executed successfully
+2025-10-06 00:34:05,797 - [WARNING] - apscheduler.executors.default - Run time of job "Recalculate portfolio values (trigger: interval[0:15:00], next run at: 2025-10-06 00:48:57 +03)" was missed by 0:00:07.898068
+2025-10-06 00:38:57,900 - [INFO] - apscheduler.executors.default - Running job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:43:57 +03)" (scheduled at 2025-10-06 00:38:57.899716+03:00)
+2025-10-06 00:38:57,901 - [INFO] - app.services.background_tasks - Fetching prices for 10 popular stocks...
+2025-10-06 00:39:06,201 - [INFO] - app.services.cache_service - Cached market data for AAPL from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,202 - [INFO] - app.services.cache_service - Cached market data for GOOGL from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,203 - [INFO] - app.services.cache_service - Cached market data for MSFT from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,203 - [INFO] - app.services.cache_service - Cached market data for AMZN from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,204 - [INFO] - app.services.cache_service - Cached market data for TSLA from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,205 - [INFO] - app.services.cache_service - Cached market data for META from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,205 - [INFO] - app.services.cache_service - Cached market data for NVDA from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,206 - [INFO] - app.services.cache_service - Cached market data for JPM from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,206 - [INFO] - app.services.cache_service - Cached market data for V from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,207 - [INFO] - app.services.cache_service - Cached market data for WMT from yahoo_finance (TTL: 300s)
+2025-10-06 00:39:06,207 - [INFO] - app.services.background_tasks - Successfully fetched and cached prices for 10 stocks
+2025-10-06 00:39:06,207 - [INFO] - apscheduler.executors.default - Job "Fetch popular stock prices (trigger: interval[0:05:00], next run at: 2025-10-06 00:43:57 +03)" executed successfully

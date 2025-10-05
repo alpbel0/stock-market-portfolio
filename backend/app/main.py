@@ -10,7 +10,8 @@ from .core.logger import setup_logging
 from .middleware.logging_middleware import logging_middleware
 from .middleware.error_handler import generic_error_handler
 from .middleware.rate_limit import RateLimitMiddleware
-from .api.v1 import auth, users, portfolio
+from .api.v1 import auth, users, portfolio, market
+from .services.background_tasks import start_background_tasks, shutdown_background_tasks
 
 
 # Setup logging
@@ -40,10 +41,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Lifecycle Events ---
+
+@app.on_event("startup")
+async def startup_event():
+    """Uygulama başlangıcında çalışacak işlemler"""
+    try:
+        start_background_tasks()
+    except Exception as e:
+        # Background task'lar başlamazsa uygulama çalışmaya devam etsin
+        # ama loglayalım
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Background tasks could not be started: {str(e)}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Uygulama kapanışında çalışacak işlemler"""
+    try:
+        shutdown_background_tasks()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Error shutting down background tasks: {str(e)}")
+
+
 # --- API Routers ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["User Management"])
 app.include_router(portfolio.router, prefix="/api/v1")
+app.include_router(market.router, prefix="/api/v1/market", tags=["Market Data"])
 
 # --- API Endpoints ---
 

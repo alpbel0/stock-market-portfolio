@@ -20,6 +20,12 @@ redis
 # Input Validation
 email-validator
 
+# External API Integration
+requests
+yfinance
+alpha-vantage
+pycoingecko
+
 # Development & Testing
 pytest
 pytest-asyncio

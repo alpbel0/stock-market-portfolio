@@ -3,16 +3,23 @@ External API entegrasyonları için Market Data Service.
 Alpha Vantage, CoinGecko, TCMB ve Yahoo Finance API'lerini kullanır.
 """
 import logging
-from typing import Optional, Dict, Any
-from decimal import Decimal
+from typing import Optional, Dict, Any, List
 import xml.etree.ElementTree as ET
+import time
 
 import requests
 import yfinance as yf
 from alpha_vantage.timeseries import TimeSeries
+from alpha_vantage.symbol_search import SymbolSearch
 from pycoingecko import CoinGeckoAPI
 
 from ..core.config import get_settings
+from ..utils.exceptions import (
+    APIRateLimitException,
+    DataSourceUnavailableException,
+    MarketDataNotFoundException,
+    ExternalAPIException
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +29,7 @@ class MarketDataService:
     Farklı kaynaklardan piyasa verilerini çeken servis sınıfı.
     
     Desteklenen veri kaynakları:
-    - Alpha Vantage: Hisse senedi fiyatları
+    - Alpha Vantage: Hisse senedi fiyatları ve sembol arama
     - CoinGecko: Kripto para fiyatları
     - TCMB: Döviz kurları
     - Yahoo Finance: Genel finans verileri
@@ -37,6 +44,8 @@ class MarketDataService:
         if not self.alpha_vantage_key:
             raise ValueError("ALPHA_VANTAGE_API_KEY ayarlanmalı ve boş bırakılamaz.")
         self.ts = TimeSeries(key=self.alpha_vantage_key, output_format='json')
+        self.ss = SymbolSearch(key=self.alpha_vantage_key, output_format='json')
+
         
         # CoinGecko API key yapılandırmadan alınmalı
         self.coingecko_key = getattr(settings, 'COINGECKO_API_KEY', None)
@@ -48,14 +57,62 @@ class MarketDataService:
         self.tcmb_url = 'https://www.tcmb.gov.tr/kurlar/today.xml'
         
         logger.info("MarketDataService initialized successfully")
-    
-    def get_stock_price(self, symbol: str, provider: str = "alpha_vantage") -> Optional[Dict[str, Any]]:
+
+    def search_symbols(self, query: str) -> List[Dict[str, Any]]:
         """
-        Hisse senedi fiyatını çeker.
+        Alpha Vantage kullanarak hisse senedi sembollerini arar.
+        
+        Args:
+            query: Aranacak anahtar kelime.
+            
+        Returns:
+            Aramayla eşleşen sembollerin listesi.
+        """
+        try:
+            data, _ = self.ss.get_symbol_search(keywords=query)
+            return data
+        except Exception as e:
+            logger.error(f"Alpha Vantage symbol search error for query '{query}': {str(e)}")
+            raise
+
+    def get_trending_stocks(self) -> List[Dict[str, Any]]:
+        """
+        Yahoo Finance'dan popüler veya en çok işlem gören hisseleri çeker.
+        Şimdilik popüler hisselerden oluşan statik bir liste döndüreceğiz.
+        TODO: Dinamik bir trending endpoint'i bulunup entegre edilebilir (örn: Yahoo Finance screener'lar).
+        """
+        # For now, returning a static list of popular tech stocks.
+        trending_symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"]
+        return self.get_bulk_stock_prices(trending_symbols)
+
+    def get_bulk_stock_prices(self, symbols: List[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+        """
+        Verilen sembol listesi için toplu hisse senedi fiyatlarını çeker.
+        
+        Args:
+            symbols: Fiyatları alınacak hisse senedi sembollerinin listesi.
+            
+        Returns:
+            Her sembol için fiyat bilgilerini içeren bir sözlük.
+        """
+        prices = {}
+        for symbol in symbols:
+            try:
+                prices[symbol] = self.get_stock_price(symbol, provider="yahoo")
+            except Exception as e:
+                logger.warning(f"Could not fetch price for symbol {symbol}: {e}")
+                prices[symbol] = None
+        return prices
+        logger.info("MarketDataService initialized successfully")
+    
+    def get_stock_price(self, symbol: str, provider: str = "alpha_vantage", use_fallback: bool = True) -> Optional[Dict[str, Any]]:
+        """
+        Hisse senedi fiyatını çeker. Fallback mekanizması ile alternatif kaynaklara geçiş yapar.
         
         Args:
             symbol: Hisse senedi sembolü (örn: 'AAPL', 'GOOGL')
             provider: Veri kaynağı ('alpha_vantage' veya 'yahoo')
+            use_fallback: Birincil kaynak başarısız olursa alternatif kaynaklara geçiş yap
             
         Returns:
             Dict: {
@@ -63,23 +120,69 @@ class MarketDataService:
                 'price': float,
                 'currency': str,
                 'timestamp': str,
-                'provider': str
+                'provider': str,
+                'is_fallback': bool  # Fallback kullanıldıysa True
             }
             
         Raises:
-            Exception: API hatası durumunda
+            MarketDataNotFoundException: Veri bulunamazsa
+            DataSourceUnavailableException: Tüm veri kaynakları kullanılamazsa
         """
-        try:
+        providers_to_try = [provider]
+        
+        # Fallback aktifse alternatif provider'ları ekle
+        if use_fallback:
             if provider == "alpha_vantage":
-                return self._get_stock_price_alpha_vantage(symbol)
-            elif provider == "yahoo":
-                return self._get_stock_price_yahoo(symbol)
-            else:
-                raise ValueError(f"Unknown provider: {provider}")
+                providers_to_try.append("yahoo")
+            else:  # yahoo
+                providers_to_try.append("alpha_vantage")
+        
+        last_exception = None
+        
+        for idx, current_provider in enumerate(providers_to_try):
+            try:
+                is_fallback = idx > 0  # İlk provider değilse fallback
                 
-        except Exception as e:
-            logger.error(f"Error fetching stock price for {symbol}: {str(e)}")
-            raise
+                if current_provider == "alpha_vantage":
+                    result = self._get_stock_price_alpha_vantage(symbol)
+                elif current_provider == "yahoo":
+                    result = self._get_stock_price_yahoo(symbol)
+                else:
+                    continue
+                
+                # Fallback kullanıldıysa işaretle
+                if result:
+                    result['is_fallback'] = is_fallback
+                    if is_fallback:
+                        logger.info(f"Using fallback provider '{current_provider}' for {symbol}")
+                    return result
+                    
+            except Exception as e:
+                last_exception = e
+                logger.warning(f"Provider '{current_provider}' failed for {symbol}: {str(e)}")
+                
+                # Rate limit hatası ise bekle ve tekrar dene
+                if "rate limit" in str(e).lower() or "429" in str(e):
+                    if use_fallback and idx < len(providers_to_try) - 1:
+                        logger.info(f"Rate limit hit for '{current_provider}', trying fallback...")
+                        continue
+                    else:
+                        raise APIRateLimitException(provider=current_provider, retry_after=60)
+                
+                # Son provider da başarısız olursa exception fırlat
+                if idx == len(providers_to_try) - 1:
+                    if "not found" in str(e).lower() or "404" in str(e):
+                        raise MarketDataNotFoundException(symbol=symbol, asset_type="stock")
+                    raise DataSourceUnavailableException(
+                        source="all_providers",
+                        reason=f"All providers failed. Last error: {str(last_exception)}"
+                    )
+        
+        # Hiçbir provider çalışmadıysa
+        raise DataSourceUnavailableException(
+            source="all_providers",
+            reason=f"Could not fetch data from any provider. Last error: {str(last_exception)}"
+        )
     
     def _get_stock_price_alpha_vantage(self, symbol: str) -> Dict[str, Any]:
         """Alpha Vantage'den hisse senedi fiyatı çeker."""

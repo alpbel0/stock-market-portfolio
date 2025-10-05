@@ -17,6 +17,9 @@ alembic
 # Rate Limiting & Caching
 redis
 
+# Background Tasks
+APScheduler
+
 # Input Validation
 email-validator
 

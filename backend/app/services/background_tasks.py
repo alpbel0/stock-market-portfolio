@@ -12,7 +12,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.services.market_service import get_market_service
 from app.services.cache_service import get_cache_service
 from app.core.database import SessionLocal
-from app.crud.portfolio import portfolio as portfolio_crud
+from app.models.portfolio import Portfolio
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +104,9 @@ class BackgroundTaskService:
             # Cache'e kaydet
             for symbol, price_data in prices.items():
                 if price_data:
-                    cache_key = f"stock_price:{symbol}"
-                    self.cache_service.set(cache_key, price_data, ttl=300)  # 5 dakika TTL
+                    # CacheService API'sine uygun şekilde cache'le
+                    source = price_data.get('provider', 'yahoo_finance')
+                    self.cache_service.cache_market_data(symbol, price_data, source=source, ttl=300)
             
             logger.info(f"Successfully fetched and cached prices for {len(prices)} stocks")
             
@@ -122,9 +123,7 @@ class BackgroundTaskService:
             logger.info("Starting portfolio value recalculation...")
             
             # Tüm aktif portfolio'ları getir
-            portfolios = db.query(portfolio_crud.model).filter(
-                portfolio_crud.model.is_active == True
-            ).all()
+            portfolios = db.query(Portfolio).all()
             
             updated_count = 0
             
@@ -193,9 +192,18 @@ class BackgroundTaskService:
             
             trending_data = self.market_service.get_trending_stocks()
             
-            # Cache'e kaydet
-            cache_key = "trending_stocks"
-            self.cache_service.set(cache_key, trending_data, ttl=3600)  # 1 saat TTL
+            # Cache'e kaydet (sembol bazlı)
+            data_list = [
+                {
+                    'symbol': symbol,
+                    'data': data,
+                    'source': data.get('provider', 'yahoo_finance') if isinstance(data, dict) else 'yahoo_finance'
+                }
+                for symbol, data in (trending_data.items() if isinstance(trending_data, dict) else [])
+                if data
+            ]
+            if data_list:
+                self.cache_service.bulk_cache_update(data_list, ttl=3600)
             
             logger.info("Trending stocks updated successfully")
             

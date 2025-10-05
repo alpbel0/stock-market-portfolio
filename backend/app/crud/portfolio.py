@@ -65,39 +65,71 @@ def delete_portfolio(db: Session, portfolio_id: int) -> bool:
 
 # --- Asset & Transaction --- #
 
-def get_or_create_asset(db: Session, portfolio_id: int, symbol: str) -> Asset:
-    """Get an asset by symbol or create it if it doesn't exist for the portfolio."""
+def get_or_create_asset(
+    db: Session,
+    portfolio_id: int,
+    *,
+    symbol: str,
+    name: str,
+    asset_type: AssetType,
+) -> Asset:
+    """Get or create an asset matching the provided metadata."""
+
     asset = db.query(Asset).filter(and_(Asset.portfolio_id == portfolio_id, Asset.symbol == symbol)).first()
-    if not asset:
-        # In a real application, you would fetch the asset name and type from a financial data provider.
-        asset_create = AssetCreate(symbol=symbol, name=f"Asset {symbol}", asset_type=AssetType.STOCK)
-        asset = Asset(**asset_create.model_dump(), portfolio_id=portfolio_id)
-        db.add(asset)
-        db.commit()
-        db.refresh(asset)
+    if asset:
+        updated = False
+        if asset.name != name:
+            asset.name = name
+            updated = True
+        if asset.asset_type != asset_type:
+            asset.asset_type = asset_type
+            updated = True
+        if updated:
+            db.commit()
+            db.refresh(asset)
+        return asset
+
+    asset_create = AssetCreate(symbol=symbol, name=name, asset_type=asset_type)
+    asset = Asset(**asset_create.model_dump(), portfolio_id=portfolio_id)
+    db.add(asset)
+    db.commit()
+    db.refresh(asset)
     return asset
 
 def add_transaction(db: Session, portfolio_id: int, transaction_in: TransactionCreate) -> Transaction:
     """Add a new transaction, creating the asset if it doesn't exist."""
-    asset = get_or_create_asset(db, portfolio_id=portfolio_id, symbol=transaction_in.symbol)
-    
+
+    asset = get_or_create_asset(
+        db,
+        portfolio_id=portfolio_id,
+        symbol=transaction_in.symbol,
+        name=transaction_in.asset_name,
+        asset_type=transaction_in.asset_type,
+    )
+
     transaction = Transaction(
         portfolio_id=portfolio_id,
         asset_id=asset.id,
         transaction_type=transaction_in.transaction_type,
         quantity=transaction_in.quantity,
         price=transaction_in.price,
-        total_amount=transaction_in.quantity * transaction_in.price
     )
-    
+
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
+    db.refresh(transaction, attribute_names=["asset"])
     return transaction
 
 def get_transactions_by_portfolio(db: Session, portfolio_id: int) -> List[Transaction]:
     """Get all transactions for a specific portfolio."""
-    return db.query(Transaction).filter(Transaction.portfolio_id == portfolio_id).order_by(Transaction.created_at.desc()).all()
+    return (
+        db.query(Transaction)
+        .options(joinedload(Transaction.asset))
+        .filter(Transaction.portfolio_id == portfolio_id)
+        .order_by(Transaction.created_at.desc())
+        .all()
+    )
 
 
 def get_assets_by_portfolio(db: Session, portfolio_id: int) -> List[Asset]:

@@ -96,3 +96,20 @@ def get_portfolio_transactions(
     if not portfolio or portfolio.owner.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
     return crud_portfolio.get_transactions_by_portfolio(db, portfolio_id=portfolio_id)
+
+
+@router.delete("/{portfolio_id}/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_asset_from_portfolio(
+    portfolio_id: int,
+    asset_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_active_user)]
+) -> None:
+    """Remove an asset and its transactions from a portfolio."""
+    portfolio = crud_portfolio.get_portfolio_summary(db, portfolio_id=portfolio_id)
+    if not portfolio or portfolio.owner.id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
+
+    removed = crud_portfolio.remove_asset(db, portfolio_id=portfolio_id, asset_id=asset_id)
+    if not removed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found in portfolio")

@@ -94,3 +94,18 @@ def add_transaction(db: Session, portfolio_id: int, transaction_in: TransactionC
 def get_transactions_by_portfolio(db: Session, portfolio_id: int) -> List[Transaction]:
     """Get all transactions for a specific portfolio."""
     return db.query(Transaction).filter(Transaction.portfolio_id == portfolio_id).order_by(Transaction.created_at.desc()).all()
+
+
+def remove_asset(db: Session, portfolio_id: int, asset_id: int) -> bool:
+    """Remove an asset and its transactions from a portfolio."""
+    asset = (
+        db.query(Asset)
+        .filter(Asset.id == asset_id, Asset.portfolio_id == portfolio_id)
+        .first()
+    )
+    if not asset:
+        return False
+
+    db.delete(asset)
+    db.commit()
+    return True

@@ -33,7 +33,7 @@ class MarketDataService:
         settings = get_settings()
         
         # Alpha Vantage API key yapılandırmadan alınmalı
-        self.alpha_vantage_key = getattr(settings, 'ALPHA_VANTAGE_API_KEY', None)
+        self.alpha_vantage_key = settings.ALPHA_VANTAGE_API_KEY
         if not self.alpha_vantage_key:
             raise ValueError("ALPHA_VANTAGE_API_KEY ayarlanmalı ve boş bırakılamaz.")
         self.ts = TimeSeries(key=self.alpha_vantage_key, output_format='json')

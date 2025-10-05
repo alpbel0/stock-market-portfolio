@@ -10,7 +10,7 @@ from .core.logger import setup_logging
 from .middleware.logging_middleware import logging_middleware
 from .middleware.error_handler import generic_error_handler
 from .middleware.rate_limit import RateLimitMiddleware
-from .api.v1 import auth, users
+from .api.v1 import auth, users, portfolio
 
 
 # Setup logging
@@ -43,6 +43,7 @@ app.add_middleware(
 # --- API Routers ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["User Management"])
+app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio Management"])
 
 # --- API Endpoints ---
 

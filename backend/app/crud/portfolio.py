@@ -1,20 +1,22 @@
 """
-CRUD operations for Portfolio and Asset models.
+CRUD operations for Portfolio, Asset, and Transaction models, with dynamic calculations.
 """
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_
 from typing import List, Optional
 
 from ..models.portfolio import Portfolio
-from ..models.asset import Asset
+from ..models.asset import Asset, AssetType
+from ..models.transaction import Transaction, TransactionType
 from ..schemas.portfolio import PortfolioCreate, PortfolioUpdate
-from ..schemas.asset import AssetCreate, AssetUpdate
+from ..schemas.asset import AssetCreate
+from ..schemas.transaction import TransactionCreate
 
 # --- Portfolio CRUD --- #
 
-def create_portfolio(db: Session, portfolio: PortfolioCreate, user_id: int) -> Portfolio:
+def create_portfolio(db: Session, portfolio_in: PortfolioCreate, user_id: int) -> Portfolio:
     """Create a new portfolio for a user."""
-    db_portfolio = Portfolio(**portfolio.model_dump(), user_id=user_id)
+    db_portfolio = Portfolio(**portfolio_in.model_dump(), user_id=user_id)
     db.add(db_portfolio)
     db.commit()
     db.refresh(db_portfolio)
@@ -24,13 +26,18 @@ def get_portfolios_by_user(db: Session, user_id: int) -> List[Portfolio]:
     """Get all portfolios for a specific user."""
     return db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
 
-def get_portfolio_by_id(db: Session, portfolio_id: int) -> Optional[Portfolio]:
-    """Get a single portfolio by its ID."""
-    return db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
+def get_portfolio_summary(db: Session, portfolio_id: int) -> Optional[Portfolio]:
+    """Get a portfolio and eager load its assets and their transactions."""
+    return (
+        db.query(Portfolio)
+        .filter(Portfolio.id == portfolio_id)
+        .options(joinedload(Portfolio.assets).joinedload(Asset.transactions))
+        .first()
+    )
 
 def update_portfolio(db: Session, portfolio_id: int, portfolio_update: PortfolioUpdate) -> Optional[Portfolio]:
-    """Update a portfolio's details."""
-    db_portfolio = get_portfolio_by_id(db, portfolio_id)
+    """Update a portfolio's name or description."""
+    db_portfolio = db.query(Portfolio).filter(Portfolio.id == portfolio_id).first()
     if not db_portfolio:
         return None
     
@@ -43,8 +50,8 @@ def update_portfolio(db: Session, portfolio_id: int, portfolio_update: Portfolio
     return db_portfolio
 
 def delete_portfolio(db: Session, portfolio_id: int) -> bool:
-    """Delete a portfolio."""
-    db_portfolio = get_portfolio_by_id(db, portfolio_id)
+    """Delete a portfolio and its associated assets and transactions."""
+    db_portfolio = get_portfolio_summary(db, portfolio_id)
     if not db_portfolio:
         return False
         
@@ -52,70 +59,38 @@ def delete_portfolio(db: Session, portfolio_id: int) -> bool:
     db.commit()
     return True
 
-# --- Asset CRUD --- #
+# --- Asset & Transaction --- #
 
-def add_asset_to_portfolio(db: Session, asset: AssetCreate, portfolio_id: int) -> Asset:
-    """Add a new asset to a portfolio."""
-    db_asset = Asset(**asset.model_dump(), portfolio_id=portfolio_id)
-    db.add(db_asset)
-    db.commit()
-    db.refresh(db_asset)
-    return db_asset
+def get_or_create_asset(db: Session, portfolio_id: int, symbol: str) -> Asset:
+    """Get an asset by symbol or create it if it doesn't exist for the portfolio."""
+    asset = db.query(Asset).filter(and_(Asset.portfolio_id == portfolio_id, Asset.symbol == symbol)).first()
+    if not asset:
+        # In a real application, you would fetch the asset name and type from a financial data provider.
+        asset_create = AssetCreate(symbol=symbol, name=f"Asset {symbol}", asset_type=AssetType.STOCK)
+        asset = Asset(**asset_create.model_dump(), portfolio_id=portfolio_id)
+        db.add(asset)
+        db.commit()
+        db.refresh(asset)
+    return asset
 
-def get_assets_by_portfolio(db: Session, portfolio_id: int) -> List[Asset]:
-    """Get all assets for a specific portfolio."""
-    return db.query(Asset).filter(Asset.portfolio_id == portfolio_id).all()
-
-def update_asset(db: Session, asset_id: int, asset_update: AssetUpdate) -> Optional[Asset]:
-    """Update an asset's details."""
-    db_asset = db.query(Asset).filter(Asset.id == asset_id).first()
-    if not db_asset:
-        return None
+def add_transaction(db: Session, portfolio_id: int, transaction_in: TransactionCreate) -> Transaction:
+    """Add a new transaction, creating the asset if it doesn't exist."""
+    asset = get_or_create_asset(db, portfolio_id=portfolio_id, symbol=transaction_in.symbol)
     
-    update_data = asset_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_asset, key, value)
-        
-    db.commit()
-    db.refresh(db_asset)
-    return db_asset
-
-def remove_asset(db: Session, asset_id: int) -> bool:
-    """Remove an asset from a portfolio."""
-    db_asset = db.query(Asset).filter(Asset.id == asset_id).first()
-    if not db_asset:
-        return False
-        
-    db.delete(db_asset)
-    db.commit()
-    return True
-
-# --- Calculation Logic --- #
-
-def calculate_portfolio_value(db: Session, portfolio_id: int) -> dict:
-    """
-    Dynamically calculate the total value, cost, and profit/loss of a portfolio.
-    This is a simplified calculation. Real-world scenarios would involve fetching live prices.
-    """
-    total_value = 0.0
-    total_cost = 0.0
-
-    assets = get_assets_by_portfolio(db, portfolio_id)
-
-    for asset in assets:
-        # For simplicity, current_price is used. In a real app, this would be fetched live.
-        current_price = asset.current_price or asset.purchase_price
-        
-        asset_value = asset.quantity * current_price
-        asset_cost = asset.quantity * asset.purchase_price
-        
-        total_value += asset_value
-        total_cost += asset_cost
-
-    profit_loss = total_value - total_cost
+    transaction = Transaction(
+        portfolio_id=portfolio_id,
+        asset_id=asset.id,
+        transaction_type=transaction_in.transaction_type,
+        quantity=transaction_in.quantity,
+        price=transaction_in.price,
+        total_amount=transaction_in.quantity * transaction_in.price
+    )
     
-    return {
-        "total_value": total_value,
-        "total_cost": total_cost,
-        "profit_loss": profit_loss
-    }
+    db.add(transaction)
+    db.commit()
+    db.refresh(transaction)
+    return transaction
+
+def get_transactions_by_portfolio(db: Session, portfolio_id: int) -> List[Transaction]:
+    """Get all transactions for a specific portfolio."""
+    return db.query(Transaction).filter(Transaction.portfolio_id == portfolio_id).order_by(Transaction.created_at.desc()).all()

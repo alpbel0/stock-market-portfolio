@@ -3,6 +3,9 @@ class User {
   final String email;
   final String? name;
   final DateTime createdAt;
+  
+  // Sentinel nesnesi: copyWith'ta 'parametre verilmedi' ile 'bilerek null verildi' ayrımını yapmak için
+  static final Object _notProvided = Object();
 
   User({
     required this.id,
@@ -32,13 +35,13 @@ class User {
   User copyWith({
     String? id,
     String? email,
-    String? name,
+    Object? name = _notProvided,
     DateTime? createdAt,
   }) {
     return User(
       id: id ?? this.id,
       email: email ?? this.email,
-      name: name ?? this.name,
+      name: identical(name, _notProvided) ? this.name : name as String?,
       createdAt: createdAt ?? this.createdAt,
     );
   }

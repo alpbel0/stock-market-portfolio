@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 
@@ -63,17 +64,19 @@ class ApiClient {
       ),
     );
     
-    // Add logging interceptor in debug mode
-    _dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        requestHeader: true,
-        responseHeader: false,
-        error: true,
-        logPrint: (obj) => print('[API] $obj'),
-      ),
-    );
+    // Add logging interceptor in debug mode only
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          requestHeader: false,
+          responseHeader: false,
+          error: true,
+          logPrint: (obj) => debugPrint('[API] $obj'),
+        ),
+      );
+    }
   }
   
   Future<bool> _refreshToken() async {
@@ -98,7 +101,9 @@ class ApiClient {
       
       return false;
     } catch (e) {
-      print('[API] Token refresh failed: $e');
+      if (kDebugMode) {
+        debugPrint('[API] Token refresh failed: $e');
+      }
       return false;
     }
   }

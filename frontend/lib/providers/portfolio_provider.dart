@@ -8,6 +8,9 @@ class PortfolioState {
   final Portfolio? selectedPortfolio;
   final bool isLoading;
   final String? error;
+  
+  // Sentinel nesnesi: copyWith'ta 'parametre verilmedi' ile 'bilerek null verildi' ayrımını yapmak için
+  static const _sentinel = Object();
 
   PortfolioState({
     this.portfolios = const [],
@@ -18,15 +21,17 @@ class PortfolioState {
 
   PortfolioState copyWith({
     List<Portfolio>? portfolios,
-    Portfolio? selectedPortfolio,
+    Object? selectedPortfolio = _sentinel,
     bool? isLoading,
-    String? error,
+    Object? error = _sentinel,
   }) {
     return PortfolioState(
       portfolios: portfolios ?? this.portfolios,
-      selectedPortfolio: selectedPortfolio ?? this.selectedPortfolio,
+      selectedPortfolio: identical(selectedPortfolio, _sentinel)
+          ? this.selectedPortfolio
+          : selectedPortfolio as Portfolio?,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: identical(error, _sentinel) ? this.error : error as String?,
     );
   }
 

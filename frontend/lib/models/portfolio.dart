@@ -9,6 +9,9 @@ class Portfolio {
   final double profitLossPercentage;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // Sentinel object: used in copyWith to distinguish between 'parameter not provided' and 'explicitly set to null'
+  static const _sentinel = Object();
 
   Portfolio({
     required this.id,
@@ -56,7 +59,7 @@ class Portfolio {
   Portfolio copyWith({
     String? id,
     String? name,
-    String? description,
+    Object? description = _sentinel,
     String? userId,
     double? totalValue,
     double? totalCost,
@@ -68,7 +71,7 @@ class Portfolio {
     return Portfolio(
       id: id ?? this.id,
       name: name ?? this.name,
-      description: description ?? this.description,
+      description: identical(description, _sentinel) ? this.description : description as String?,
       userId: userId ?? this.userId,
       totalValue: totalValue ?? this.totalValue,
       totalCost: totalCost ?? this.totalCost,

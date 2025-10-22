@@ -38,20 +38,29 @@ class ApiClient {
         onError: (error, handler) async {
           // Handle 401 Unauthorized - Token expired
           if (error.response?.statusCode == 401) {
-            // Try to refresh token
-            final refreshed = await _refreshToken();
-            
-            if (refreshed) {
-              // Retry the original request
-              final options = error.requestOptions;
-              final token = _prefs.getString(StorageKeys.accessToken);
-              options.headers['Authorization'] = 'Bearer $token';
+            // Avoid retrying for the refresh endpoint itself
+            final reqPath = error.requestOptions.path;
+            final refreshPath = '${ApiConstants.authEndpoint}/refresh';
+            final isRefreshCall = reqPath.endsWith(refreshPath) || reqPath.contains(refreshPath);
+            final alreadyRetried = error.requestOptions.extra['__retried'] == true;
+
+            if (!isRefreshCall && !alreadyRetried) {
+              // Try to refresh token
+              final refreshed = await _refreshToken();
               
-              try {
-                final response = await _dio.fetch(options);
-                return handler.resolve(response);
-              } catch (e) {
-                return handler.reject(error);
+              if (refreshed) {
+                // Retry the original request
+                final options = error.requestOptions;
+                final token = _prefs.getString(StorageKeys.accessToken);
+                options.headers['Authorization'] = 'Bearer $token';
+                options.extra['__retried'] = true;
+                
+                try {
+                  final response = await _dio.fetch(options);
+                  return handler.resolve(response);
+                } catch (e) {
+                  return handler.reject(error);
+                }
               }
             }
           }

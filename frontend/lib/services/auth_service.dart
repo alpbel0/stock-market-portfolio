@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/api_client.dart';
 import '../models/user.dart';
@@ -29,7 +30,10 @@ class AuthService {
 
       return User.fromJson(userData);
     } catch (e) {
-      throw Exception('Giriş başarısız: $e');
+      if (kDebugMode) {
+        debugPrint('Login failed: $e');
+      }
+      throw Exception('Giriş başarısız. Lütfen tekrar deneyin.');
     }
   }
 
@@ -40,12 +44,13 @@ class AuthService {
     String? name,
   }) async {
     try {
+      final trimmedName = name?.trim();
       final response = await _apiClient.post(
         '/auth/register',
         data: {
           'email': email,
           'password': password,
-          if (name != null) 'name': name,
+          if (trimmedName != null && trimmedName.isNotEmpty) 'name': trimmedName,
         },
       );
 
@@ -59,7 +64,10 @@ class AuthService {
 
       return User.fromJson(userData);
     } catch (e) {
-      throw Exception('Kayıt başarısız: $e');
+      if (kDebugMode) {
+        debugPrint('Register failed: $e');
+      }
+      throw Exception('Kayıt başarısız. Lütfen tekrar deneyin.');
     }
   }
 

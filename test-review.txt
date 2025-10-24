@@ -1,0 +1,10 @@
+This is a test file to trigger the auto-review workflow.
+
+The workflow should:
+1. Detect this PR
+2. Request Copilot review
+3. Analyze review comments
+4. Fix any critical issues
+5. Comment when done
+
+Testing auto-review system...

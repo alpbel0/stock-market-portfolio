@@ -58,11 +58,7 @@ jobs:
               
               # Note: Actual auto-fix would require Copilot API integration
               # For now, just notify
-              gh pr comment $PR_NUMBER --body "⚠️ **Kritik sorunlar tespit edildi!**
-              
-Copilot review'da kritik sorunlar bulundu. Lütfen review yorumlarını kontrol edip gerekli düzeltmeleri yapın.
-
-**İterasyon:** $((ITERATION + 1))/$MAX_ITERATIONS"
+              gh pr comment $PR_NUMBER --body "⚠️ **Kritik sorunlar tespit edildi!** Copilot review'da kritik sorunlar bulundu. Lütfen review yorumlarını kontrol edip gerekli düzeltmeleri yapın. **İterasyon:** $((ITERATION + 1))/$MAX_ITERATIONS"
               
               # In a full implementation, this is where we'd use Copilot to fix issues
               # For now, we'll just wait for manual fixes

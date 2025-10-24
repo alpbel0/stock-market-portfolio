@@ -1,0 +1,83 @@
+name: Auto Review & Fix
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  auto-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install GitHub CLI Copilot extension
+        run: gh extension install github/gh-copilot || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Review & Fix Loop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          MAX_ITERATIONS=5
+          ITERATION=0
+          
+          while [ $ITERATION -lt $MAX_ITERATIONS ]; do
+            echo "🔄 Iteration $((ITERATION + 1))/$MAX_ITERATIONS"
+            
+            # Copilot review tetikle
+            echo "📝 Requesting Copilot review..."
+            gh pr review $PR_NUMBER --comment -b "🤖 Copilot, please review this PR for any critical issues, bugs, or improvements."
+            
+            # Review yorumlarını al
+            sleep 10  # Review'ın tamamlanması için bekle
+            REVIEWS=$(gh pr view $PR_NUMBER --json reviews --jq '.reviews[-1].body')
+            
+            # Copilot ile kritiklik analizi
+            echo "🔍 Analyzing review comments..."
+            CRITICAL_CHECK=$(echo "$REVIEWS" | gh copilot suggest -t shell "Bu review yorumlarında critical, blocking, must fix gibi ciddi sorunlar var mı? Sadece 'YES' veya 'NO' cevabı ver.")
+            
+            if [[ "$CRITICAL_CHECK" == *"NO"* ]] || [ -z "$REVIEWS" ]; then
+              echo "✅ No critical issues found!"
+              gh pr comment $PR_NUMBER --body "✅ **Otomatik review tamamlandı!**
+
+Copilot tarafından yapılan incelemede kritik sorun bulunamadı. 
+
+PR'ı merge edebilirsiniz. 🚀"
+              exit 0
+            fi
+            
+            # Kritik sorunları bul ve düzelt
+            echo "🔧 Fixing critical issues..."
+            echo "$REVIEWS" | gh copilot suggest -t git "Bu review yorumlarındaki kritik sorunları düzelt ve değişiklikleri commit et"
+            
+            # Değişiklikler varsa commit & push
+            if [ -n "$(git status --porcelain)" ]; then
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add .
+              git commit -m "fix: address copilot review comments (iteration $((ITERATION + 1)))"
+              git push
+              echo "✅ Fixes pushed, waiting for next review..."
+              sleep 15
+            else
+              echo "⚠️ No changes made by Copilot"
+            fi
+            
+            ITERATION=$((ITERATION + 1))
+          done
+          
+          # Max iterasyona ulaşıldı
+          echo "⚠️ Max iterations reached"
+          gh pr comment $PR_NUMBER --body "⚠️ **Otomatik review döngüsü tamamlandı**
+
+$MAX_ITERATIONS iterasyon sonunda bazı sorunlar hala mevcut olabilir. Manuel kontrol önerilir."

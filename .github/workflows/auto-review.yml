@@ -48,11 +48,7 @@ jobs:
             
             if [[ "$CRITICAL_CHECK" == *"NO"* ]] || [ -z "$REVIEWS" ]; then
               echo "✅ No critical issues found!"
-              gh pr comment $PR_NUMBER --body "✅ **Otomatik review tamamlandı!**
-
-Copilot tarafından yapılan incelemede kritik sorun bulunamadı. 
-
-PR'ı merge edebilirsiniz. 🚀"
+              gh pr comment $PR_NUMBER --body "✅ **Otomatik review tamamlandı!** Copilot tarafından yapılan incelemede kritik sorun bulunamadı. PR'ı merge edebilirsiniz. 🚀"
               exit 0
             fi
             
@@ -78,6 +74,4 @@ PR'ı merge edebilirsiniz. 🚀"
           
           # Max iterasyona ulaşıldı
           echo "⚠️ Max iterations reached"
-          gh pr comment $PR_NUMBER --body "⚠️ **Otomatik review döngüsü tamamlandı**
-
-$MAX_ITERATIONS iterasyon sonunda bazı sorunlar hala mevcut olabilir. Manuel kontrol önerilir."
+          gh pr comment $PR_NUMBER --body "⚠️ **Otomatik review döngüsü tamamlandı** - $MAX_ITERATIONS iterasyon sonunda bazı sorunlar hala mevcut olabilir. Manuel kontrol önerilir."
